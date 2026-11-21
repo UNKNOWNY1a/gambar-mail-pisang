@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Invoice Generator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Warna dark theme */
+            color: #f8fafc;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            border: 1px solid #334155;
+        }
+        h1 { text-align: center; color: #38bdf8; font-weight: 700; letter-spacing: 1px;}
+        label { display: block; margin-top: 15px; font-size: 13px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;}
+        input {
+            width: 100%; padding: 12px; margin-top: 5px;
+            background: #0f172a; border: 1px solid #475569; border-radius: 6px;
+            box-sizing: border-box; color: white; font-family: 'Inter';
+            transition: border 0.3s;
+        }
+        input:focus { outline: none; border-color: #38bdf8; }
+        button {
+            margin-top: 25px; width: 100%; padding: 14px;
+            background-color: #38bdf8; color: #0f172a;
+            border: none; border-radius: 6px;
+            font-size: 16px; font-weight: 700; cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover { background-color: #0ea5e9; }
+
+        /* Bahagian Invoice Result */
+        #invoice-result {
+            display: none;
+            margin-top: 30px;
+            padding: 30px;
+            background: #ffffff;
+            color: #1e293b;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        /* Watermark */
+        #invoice-result::before {
+            content: "PAID";
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 100px; font-weight: 900;
+            color: rgba(16, 185, 129, 0.1);
+            z-index: 0; pointer-events: none;
+        }
+        .invoice-header {
+            display: flex; justify-content: space-between;
+            border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;
+            position: relative; z-index: 1;
+        }
+        .invoice-header h2 { margin: 0; color: #0f172a; font-size: 24px; }
+        .company-details { font-size: 12px; color: #64748b; text-align: right; }
+        .invoice-details p { margin: 5px 0; font-size: 14px; position: relative; z-index: 1;}
+        
+        .invoice-table {
+            width: 100%; border-collapse: collapse; margin-top: 20px;
+            position: relative; z-index: 1;
+        }
+        .invoice-table th, .invoice-table td {
+            padding: 12px; text-align: left; font-size: 14px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .invoice-table th { font-weight: 600; color: #64748b; text-transform: uppercase; font-size: 12px; background: #f8fafc;}
+        .total-row { font-weight: bold; font-size: 16px; background-color: #f8fafc;}
+        
+        .btn-action {
+            display: flex; gap: 10px; margin-top: 20px; position: relative; z-index: 1;
+        }
+        .btn-print {
+            background-color: #10b981; color: white; flex: 1;
+        }
+        .btn-back {
+            background-color: #64748b; color: white; flex: 1;
+        }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; border: none; background: white; padding: 0;}
+            #form-section { display: none; }
+            #invoice-result { display: block !important; padding: 0; box-shadow: none; margin: 0;}
+            .btn-action { display: none; }
+            #invoice-result::before { color: rgba(16, 185, 129, 0.2); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- BORANG -->
+        <div id="form-section">
+            <h1>JANA INVOICE</h1>
+            
+            <label>Nama Bisnes:</label>
+            <input type="text" id="nama-bisnes" placeholder="Contoh: Topup Kilat Enterprise">
+
+            <label>No. Telefon / Alamat:</label>
+            <input type="text" id="alamat" placeholder="Contoh: 012-3456789 | KL">
+
+            <label>Nama Client:</label>
+            <input type="text" id="nama-client" placeholder="Contoh: Ali Bin Abu">
+
+            <label>Butiran Barang:</label>
+            <input type="text" id="barang" placeholder="Contoh: 100 Diamond MLBB">
+
+            <label>Kuantiti:</label>
+            <input type="number" id="kuantiti" value="1" min="1">
+
+            <label>Harga Seunit (RM):</label>
+            <input type="number" id="harga" placeholder="Contoh: 50.00" step="0.01">
+
+            <button onclick="janaInvoice()">Jana Resit</button>
+        </div>
+
+        <!-- INVOICE RESULT -->
+        <div id="invoice-result">
+            <div class="invoice-header">
+                <div>
+                    <h2>INVOICE</h2>
+                    <p style="margin:5px 0 0 0; font-size:12px; color:#64748b;">No: <span id="no-invoice"></span></p>
+                </div>
+                <div class="company-details">
+                    <strong id="res-nama-bisnes" style="color:#0f172a; font-size:14px;"></strong><br>
+                    <span id="res-alamat"></span><br>
+                    Tarikh: <span id="tarikh"></span>
+                </div>
+            </div>
+
+            <div class="invoice-details">
+                <p style="font-size:12px; color:#64748b; margin-bottom:2px;">DITUJUKAN KEPADA:</p>
+                <p style="font-weight:bold; color:#0f172a;"><span id="res-nama-client"></span></p>
+            </div>
+
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th>Butiran</th>
+                        <th>Qty</th>
+                        <th>Harga</th>
+                        <th>Jumlah</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td id="res-barang"></td>
+                        <td id="res-kuantiti"></td>
+                        <td>RM <span id="res-harga"></span></td>
+                        <td>RM <span id="res-jumlah"></span></td>
+                    </tr>
+                    <tr class="total-row">
+                        <td colspan="3" style="text-align:right;">JUMLAH KESELURUHAN:</td>
+                        <td id="res-total" style="color:#10b981;">RM 0.00</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="btn-action">
+                <button class="btn-back" onclick="window.location.reload()">Buat Baru</button>
+                <button class="btn-print" onclick="window.print()">Simpan PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function janaInvoice() {
+            let namaBisnes = document.getElementById('nama-bisnes').value || "Syarikat Anda";
+            let alamat = document.getElementById('alamat').value || "Malaysia";
+            let namaClient = document.getElementById('nama-client').value || "Client";
+            let barang = document.getElementById('barang').value || "Perkhidmatan";
+            let kuantiti = parseInt(document.getElementById('kuantiti').value) || 1;
+            let harga = parseFloat(document.getElementById('harga').value) || 0;
+
+            let jumlah = kuantiti * harga;
+            let noInvoice = "INV-" + Math.floor(Math.random() * 10000);
+            let tarikhHariIni = new Date().toLocaleDateString('ms-MY');
+
+            document.getElementById('res-nama-bisnes').innerText = namaBisnes;
+            document.getElementById('res-alamat').innerText = alamat;
+            document.getElementById('res-nama-client').innerText = namaClient;
+            document.getElementById('res-barang').innerText = barang;
+            document.getElementById('res-kuantiti').innerText = kuantiti;
+            document.getElementById('res-harga').innerText = harga.toFixed(2);
+            document.getElementById('res-jumlah').innerText = jumlah.toFixed(2);
+            document.getElementById('res-total').innerText = "RM " + jumlah.toFixed(2);
+            document.getElementById('no-invoice').innerText = noInvoice;
+            document.getElementById('tarikh').innerText = tarikhHariIni;
+
+            document.getElementById('form-section').style.display = 'none';
+            document.getElementById('invoice-result').style.display = 'block';
+        }
+    </script>
+</body>
+  </html>
